@@ -1,3 +1,4 @@
+#ifndef NO_PERF_MONITOR
 #include "perf_event_open_tool.h"
 #include <sys/syscall.h>
 #include <sys/ioctl.h>
@@ -221,3 +222,4 @@ PerfEventOpenTool::~PerfEventOpenTool() {
         if (e.fd != -1) close(e.fd);
     }
 }
+#endif

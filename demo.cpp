@@ -49,12 +49,22 @@ void multi_event_test(){
     // 输出到控制台
     tool.printResults();
 
-    // 计算miss rate
+    // 计算miss rate1
+    if (tool.getCacheMissRate() > 0) {
+        std::cout << "Cache miss rate:" << tool.getCacheMissRate() << "%" << std::endl;
+    } else {
+        std::cout << "Cache miss rate: N/A" << std::endl;
+    }
+    // 计算miss rate2
     std::map<std::string, uint64_t> results = tool.getResults();
-    std::cout << "Cache miss rate:" << 100.0*results["CACHE_MISSES"] / results["CACHE_REFERENCES"] << "%" << std::endl;
-    std::cout << "Branch miss rate:" << 100.0*results["BRANCH_MISSES"] / results["BRANCH_INSTRUCTIONS"] << "%" << std::endl;
+    if (results.count("BRANCH_MISSES") && results.count("BRANCH_INSTRUCTIONS")) {
+        std::cout << "Branch miss rate:" << 100.0*results["BRANCH_MISSES"] / results["BRANCH_INSTRUCTIONS"] << "%" << std::endl;
+    } else {
+        std::cout << "Branch miss rate: N/A" << std::endl;
+    }
 }
 
+#ifndef NO_PERF_MONITOR
 void multi_raw_event_test(){
     using std::vector;
     using std::string;
@@ -131,6 +141,10 @@ void multi_raw_event_test(){
         std::cerr << "perf_event_open failed: " << e.what() << std::endl;
         std::cerr << "部分事件可能不被本机支持，请用 perf list 检查。" << std::endl;
     }
+}
+#endif
+void multi_raw_event_test2(){
+    std::cout << "multi_raw_event_test2" << std::endl;
 }
 
 int main() {
