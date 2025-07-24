@@ -39,6 +39,35 @@ g++ demo.cpp perf_event_open_tool_class.cpp -o demo
 - 日志输出
 - 原始事件（RAW）采集
 
+```cpp
+#include "perf_event_open_tool.h"
+
+void multi_event_test(){
+    // 多事件统计
+    std::vector<PerfEventOpenTool::EventType> events = {
+        PerfEventOpenTool::EventType::CPU_CYCLES,
+        PerfEventOpenTool::EventType::INSTRUCTIONS,
+        PerfEventOpenTool::EventType::CACHE_MISSES,
+        PerfEventOpenTool::EventType::CACHE_REFERENCES,
+        PerfEventOpenTool::EventType::BRANCH_MISSES,
+        PerfEventOpenTool::EventType::BRANCH_INSTRUCTIONS,
+        PerfEventOpenTool::EventType::BUS_CYCLES,
+    };
+    PerfEventOpenTool tool2(events);
+    tool2.start();
+    my_code();
+    tool2.stop();
+    std::string log_path = "perf.log";
+    std::ofstream ofs(log_path, std::ios::trunc);
+    tool2.printResults();
+
+    std::map<std::string, uint64_t> results = tool2.getResults();
+    std::cout << "Cache miss rate:" << 100.0*results["CACHE_MISSES"] / results["CACHE_REFERENCES"] << "%" << std::endl;
+    std::cout << "Branch miss rate:" << 100.0*results["BRANCH_MISSES"] / results["BRANCH_INSTRUCTIONS"] << "%" << std::endl;
+}
+
+```
+
 详见 [demo.cpp](./demo.cpp) 示例。
 
 ## 支持的事件类型
