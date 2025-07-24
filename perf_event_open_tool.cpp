@@ -197,6 +197,30 @@ void PerfEventOpenTool::logResults(const std::string& log_path) const {
     }
 }
 
+uint64_t PerfEventOpenTool::getCacheMissCount() const {
+    auto res = getResults();
+    auto miss_it = res.find("CACHE_MISSES");
+    return miss_it != res.end() ? miss_it->second : 0;
+}
+
+uint64_t PerfEventOpenTool::getCacheReferenceCount() const {
+    auto res = getResults();
+    auto ref_it = res.find("CACHE_REFERENCES");
+    return ref_it != res.end() ? ref_it->second : 0;
+}
+
+uint64_t PerfEventOpenTool::getBranchMissCount() const {
+    auto res = getResults();
+    auto miss_it = res.find("BRANCH_MISSES");
+    return miss_it != res.end() ? miss_it->second : 0;
+}
+
+uint64_t PerfEventOpenTool::getBranchInstructionCount() const {
+    auto res = getResults();
+    auto inst_it = res.find("BRANCH_INSTRUCTIONS");
+    return inst_it != res.end() ? inst_it->second : 0;
+}
+
 double PerfEventOpenTool::getCacheMissRate() const {
     auto res = getResults();
     auto miss_it = res.find("CACHE_MISSES");

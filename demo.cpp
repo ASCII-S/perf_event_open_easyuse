@@ -41,24 +41,37 @@ void multi_event_test(){
     my_code();
     tool.stop();
 
+    std::cout << "---------------print all results-----------------" << std::endl;
+    auto res = tool.getResults();
+    for (const auto& kv : res) {
+        std::cout << "key: " << kv.first << " value: " << kv.second << std::endl;
+    }
+
+    std::cout << "--------------->log results to file<-----------------" << std::endl;
     // 输出到文件
     std::string log_path = "perf.log";
     std::ofstream ofs(log_path, std::ios::trunc);
     tool.logResults(log_path);
 
+    std::cout << "---------------print results to console-----------------" << std::endl;
     // 输出到控制台
     tool.printResults();
 
+    std::cout << "---------------calculate miss rate-----------------" << std::endl;
     // 计算miss rate1
     if (tool.getCacheMissRate() > 0) {
+        std::cout << "Cache miss count: " << tool.getCacheMissCount() << std::endl;
+        std::cout << "Cache reference count: " << tool.getCacheReferenceCount() << std::endl;
         std::cout << "Cache miss rate:" << tool.getCacheMissRate() << "%" << std::endl;
     } else {
         std::cout << "Cache miss rate: N/A" << std::endl;
     }
     // 计算miss rate2
-    std::map<std::string, uint64_t> results = tool.getResults();
-    if (results.count("BRANCH_MISSES") && results.count("BRANCH_INSTRUCTIONS")) {
-        std::cout << "Branch miss rate:" << 100.0*results["BRANCH_MISSES"] / results["BRANCH_INSTRUCTIONS"] << "%" << std::endl;
+    // std::map<std::string, uint64_t> results = tool.getResults();
+    if (tool.getBranchMissCount() > 0 && tool.getBranchInstructionCount() > 0) {
+        std::cout << "Branch miss count: " << tool.getBranchMissCount() << std::endl;
+        std::cout << "Branch instruction count: " << long(tool.getBranchInstructionCount()) << std::endl;
+        std::cout << "Branch miss rate:" << tool.getBranchMissRate()<< "%" << std::endl;
     } else {
         std::cout << "Branch miss rate: N/A" << std::endl;
     }

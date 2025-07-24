@@ -95,9 +95,30 @@ public:
     void logResults(const std::string& log_path) const;
 
     /**
+     * @brief 获取Cache Miss次数
+     */
+    uint64_t getCacheMissCount() const;
+
+    /**
+     * @brief 获取Cache Reference次数
+     */
+    uint64_t getCacheReferenceCount() const;
+
+    /**
+     * @brief 获取Branch Miss次数
+     */
+    uint64_t getBranchMissCount() const;
+
+    /**
+     * @brief 获取Branch Instruction次数
+     */
+    uint64_t getBranchInstructionCount() const;
+
+    /**
      * @brief 获取Cache Miss率（如未采集相关事件则返回0.0）
      */
-    double getCacheMissRate() const;
+     double getCacheMissRate() const;
+     
     /**
      * @brief 获取Branch Miss率（如未采集相关事件则返回0.0）
      */
@@ -155,6 +176,10 @@ public:
     std::map<std::string, uint64_t> getResults() const { return {}; }
     void printResults() const {}
     void logResults(const std::string& log_path) const {}
+    uint64_t getCacheMissCount() const { return 0; }
+    uint64_t getCacheReferenceCount() const { return 0; }
+    uint64_t getBranchMissCount() const { return 0; }
+    uint64_t getBranchInstructionCount() const { return 0; }
     double getCacheMissRate() const { return 0.0; }
     double getBranchMissRate() const { return 0.0; }
     ~PerfEventOpenTool() {}
