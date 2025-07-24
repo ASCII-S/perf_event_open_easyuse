@@ -246,4 +246,53 @@ PerfEventOpenTool::~PerfEventOpenTool() {
         if (e.fd != -1) close(e.fd);
     }
 }
+
+// 实现支持自定义事件名字的构造函数
+PerfEventOpenTool::PerfEventOpenTool(const std::vector<uint32_t>& perf_types, const std::vector<uint64_t>& perf_configs, const std::vector<std::string>& event_names) {
+    events_.clear();
+    event_names_ = event_names;
+    name2idx_.clear();
+    int group_fd = -1;
+    for (size_t i = 0; i < perf_types.size(); ++i) {
+        struct perf_event_attr pe;
+        memset(&pe, 0, sizeof(struct perf_event_attr));
+        pe.type = perf_types[i];
+        pe.size = sizeof(struct perf_event_attr);
+        pe.config = (i < perf_configs.size() ? perf_configs[i] : 0);
+        pe.disabled = 1;
+        pe.exclude_kernel = 1;
+        pe.exclude_hv = 1;
+        pe.read_format = (perf_types.size() > 1) ? (PERF_FORMAT_GROUP | PERF_FORMAT_ID) : 0;
+        int fd = perf_event_open(&pe, 0, -1, group_fd, 0);
+        if (fd == -1) throw std::runtime_error("perf_event_open failed");
+        uint64_t id = 0;
+        ioctl(fd, PERF_EVENT_IOC_ID, &id);
+        if (group_fd == -1) group_fd = fd;
+        events_.push_back({fd, EventType::RAW, (i < perf_configs.size() ? perf_configs[i] : 0), id, 0});
+        if (i < event_names.size()) {
+            name2idx_[event_names[i]] = i;
+        }
+    }
+    group_leader_fd_ = group_fd;
+    started_ = false;
+    stopped_ = false;
+}
+
+// 实现通过事件名字获取计数值
+uint64_t PerfEventOpenTool::getResultByName(const std::string& name) const {
+    auto it = name2idx_.find(name);
+    if (it != name2idx_.end() && it->second < events_.size()) {
+        return events_[it->second].value;
+    }
+    throw std::runtime_error("Event name not found");
+}
+
+// 实现获取所有自定义名字的事件计数结果
+std::map<std::string, uint64_t> PerfEventOpenTool::getResultsByName() const {
+    std::map<std::string, uint64_t> res;
+    for (size_t i = 0; i < event_names_.size() && i < events_.size(); ++i) {
+        res[event_names_[i]] = events_[i].value;
+    }
+    return res;
+}
 #endif

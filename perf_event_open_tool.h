@@ -68,6 +68,14 @@ public:
     PerfEventOpenTool(const std::vector<uint32_t>& perf_types, const std::vector<uint64_t>& perf_configs);
 
     /**
+     * @brief 支持自定义事件名字的构造函数
+     * @param perf_types 事件类型数组
+     * @param perf_configs 事件配置数组
+     * @param event_names 事件名字数组，和类型、配置一一对应
+     */
+    PerfEventOpenTool(const std::vector<uint32_t>& perf_types, const std::vector<uint64_t>& perf_configs, const std::vector<std::string>& event_names);
+
+    /**
      * @brief 启动计数器（在关键代码前调用）
      */
     void start();
@@ -125,6 +133,18 @@ public:
     double getBranchMissRate() const;
 
     /**
+     * @brief 通过事件名字获取计数值
+     * @param name 事件名字
+     * @return 计数值
+     */
+    uint64_t getResultByName(const std::string& name) const;
+    /**
+     * @brief 获取所有自定义名字的事件计数结果
+     * @return 名字到计数的映射
+     */
+    std::map<std::string, uint64_t> getResultsByName() const;
+
+    /**
      * @brief 析构函数，自动关闭fd
      */
     ~PerfEventOpenTool();
@@ -143,6 +163,8 @@ private:
     int group_leader_fd_ = -1;
     void openEvents(const std::vector<EventType>& events, const std::vector<uint64_t>& raw_configs);
     static std::string eventTypeToString(EventType type, uint64_t raw_config = 0);
+    std::vector<std::string> event_names_;
+    std::map<std::string, size_t> name2idx_;
 };
 
 #else
@@ -182,6 +204,8 @@ public:
     uint64_t getBranchInstructionCount() const { return 0; }
     double getCacheMissRate() const { return 0.0; }
     double getBranchMissRate() const { return 0.0; }
+    uint64_t getResultByName(const std::string& name) const { return 0; }
+    std::map<std::string, uint64_t> getResultsByName() const { return {}; }
     ~PerfEventOpenTool() {}
 };
 

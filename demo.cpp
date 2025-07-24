@@ -9,7 +9,7 @@
 
 
 void my_code() {
-    const int N = 2048;
+    const int N = 2046;
     static double A[N][N], B[N][N], C[N][N];
     // 初始化A、B
     for (int i = 0; i < N; ++i)
@@ -95,14 +95,6 @@ void multi_raw_event_test(){
     configs.push_back(PERF_COUNT_HW_CACHE_L1D | (PERF_COUNT_HW_CACHE_OP_READ << 8) | (PERF_COUNT_HW_CACHE_RESULT_MISS << 16));
     names.push_back("L1D_miss");
 
-    // L1I
-    // types.push_back(PERF_TYPE_HW_CACHE);
-    // configs.push_back(PERF_COUNT_HW_CACHE_L1I | (PERF_COUNT_HW_CACHE_OP_READ << 8) | (PERF_COUNT_HW_CACHE_RESULT_ACCESS << 16));
-    // names.push_back("L1I_access");
-    // types.push_back(PERF_TYPE_HW_CACHE);
-    // configs.push_back(PERF_COUNT_HW_CACHE_L1I | (PERF_COUNT_HW_CACHE_OP_READ << 8) | (PERF_COUNT_HW_CACHE_RESULT_MISS << 16));
-    // names.push_back("L1I_miss");
-
     // DTLB
     types.push_back(PERF_TYPE_HW_CACHE);
     configs.push_back(PERF_COUNT_HW_CACHE_DTLB | (PERF_COUNT_HW_CACHE_OP_READ << 8) | (PERF_COUNT_HW_CACHE_RESULT_ACCESS << 16));
@@ -111,38 +103,25 @@ void multi_raw_event_test(){
     configs.push_back(PERF_COUNT_HW_CACHE_DTLB | (PERF_COUNT_HW_CACHE_OP_READ << 8) | (PERF_COUNT_HW_CACHE_RESULT_MISS << 16));
     names.push_back("DTLB_miss");
 
-    // ITLB
-    // types.push_back(PERF_TYPE_HW_CACHE);
-    // configs.push_back(PERF_COUNT_HW_CACHE_ITLB | (PERF_COUNT_HW_CACHE_OP_READ << 8) | (PERF_COUNT_HW_CACHE_RESULT_ACCESS << 16));
-    // names.push_back("ITLB_access");
-    // types.push_back(PERF_TYPE_HW_CACHE);
-    // configs.push_back(PERF_COUNT_HW_CACHE_ITLB | (PERF_COUNT_HW_CACHE_OP_READ << 8) | (PERF_COUNT_HW_CACHE_RESULT_MISS << 16));
-    // names.push_back("ITLB_miss");
-
     try {
-        PerfEventOpenTool tool(types, configs);
+        PerfEventOpenTool tool(types, configs, names);
 
         tool.start();
         my_code();
         tool.stop();
 
         std::cout << "--------------------------------" << std::endl;
-        auto results = tool.getResults();
-        std::map<std::string, uint64_t> value_map;
-
-        for (size_t i = 0; i < names.size(); ++i) {
-            std::string key = "RAW_" + std::to_string(configs[i]);
-            value_map[names[i]] = results[key];
-            std::cout << names[i] << ": " << results[key] << " key: " << key << std::endl;
-        }   
+        // 直接用名字获取和输出
+        for (const auto& name : names) {
+            std::cout << name << ": " << tool.getResultByName(name) << std::endl;
+        }
         // 自动输出 miss rate
-        for (const auto& kv : value_map) {
-            const std::string& name = kv.first;
+        for (const auto& name : names) {
             if (name.size() > 5 && name.substr(name.size() - 5) == "_miss") {
                 std::string prefix = name.substr(0, name.size() - 5);
                 std::string access_name = prefix + "_access";
-                if (value_map.count(access_name) && value_map[access_name] > 0) {
-                    double rate = 100.0 * value_map[name] / value_map[access_name];
+                if (std::find(names.begin(), names.end(), access_name) != names.end() && tool.getResultByName(access_name) > 0) {
+                    double rate = 100.0 * tool.getResultByName(name) / tool.getResultByName(access_name);
                     std::cout << std::fixed << std::setprecision(4)
                             << prefix << " miss rate: " << rate << "%" << std::endl;
                 } else {
@@ -171,7 +150,7 @@ int main() {
     // tool.stop();
     // tool.printResults();
 
-    multi_event_test();
+    // multi_event_test();
 
-    // multi_raw_event_test();
+    multi_raw_event_test();
 }
