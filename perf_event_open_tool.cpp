@@ -50,6 +50,19 @@ std::string PerfEventOpenTool::eventTypeToString(EventType type, uint64_t raw_co
     }
 }
 
+PerfEventOpenTool::PerfEventOpenTool() {
+    std::vector<EventType> events = {
+        // EventType::CPU_CYCLES,
+        // EventType::INSTRUCTIONS,
+        EventType::CACHE_MISSES,
+        EventType::CACHE_REFERENCES,
+        EventType::BRANCH_MISSES,
+        EventType::BRANCH_INSTRUCTIONS,
+        // EventType::BUS_CYCLES,
+    };
+    openEvents(events, {});
+}
+
 PerfEventOpenTool::PerfEventOpenTool(EventType event, uint64_t raw_config) {
     openEvents({event}, {raw_config});
 }
@@ -181,6 +194,26 @@ void PerfEventOpenTool::logResults(const std::string& log_path) const {
     for (const auto& e : events_) {
         ofs << eventTypeToString(e.type, e.raw_config) << ": " << e.value << std::endl;
     }
+}
+
+double PerfEventOpenTool::getCacheMissRate() const {
+    auto res = getResults();
+    auto miss_it = res.find("CACHE_MISSES");
+    auto ref_it = res.find("CACHE_REFERENCES");
+    if (miss_it != res.end() && ref_it != res.end() && ref_it->second > 0) {
+        return 100.0 * static_cast<double>(miss_it->second) / ref_it->second;
+    }
+    return 0.0;
+}
+
+double PerfEventOpenTool::getBranchMissRate() const {
+    auto res = getResults();
+    auto miss_it = res.find("BRANCH_MISSES");
+    auto inst_it = res.find("BRANCH_INSTRUCTIONS");
+    if (miss_it != res.end() && inst_it != res.end() && inst_it->second > 0) {
+        return 100.0 * static_cast<double>(miss_it->second) / inst_it->second;
+    }
+    return 0.0;
 }
 
 PerfEventOpenTool::~PerfEventOpenTool() {

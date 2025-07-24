@@ -35,6 +35,11 @@ public:
     };
 
     /**
+     * @brief 默认构造函数,监控cache miss和branch miss
+     */
+    PerfEventOpenTool();
+
+    /**
      * @brief 构造函数，单事件
      * @param event 事件类型
      * @param raw_config RAW事件时的event_code
@@ -90,6 +95,15 @@ public:
     void logResults(const std::string& log_path) const;
 
     /**
+     * @brief 获取Cache Miss率（如未采集相关事件则返回0.0）
+     */
+    double getCacheMissRate() const;
+    /**
+     * @brief 获取Branch Miss率（如未采集相关事件则返回0.0）
+     */
+    double getBranchMissRate() const;
+
+    /**
      * @brief 析构函数，自动关闭fd
      */
     ~PerfEventOpenTool();
@@ -141,6 +155,8 @@ public:
     std::map<std::string, uint64_t> getResults() const { return {}; }
     void printResults() const {}
     void logResults(const std::string& log_path) const {}
+    double getCacheMissRate() const { return 0.0; }
+    double getBranchMissRate() const { return 0.0; }
     ~PerfEventOpenTool() {}
 };
 
