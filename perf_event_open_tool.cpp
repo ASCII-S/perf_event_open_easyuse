@@ -1,4 +1,4 @@
-#include "perf_event_open_tool_class.h"
+#include "perf_event_open_tool.h"
 #include <sys/syscall.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -58,48 +58,33 @@ PerfEventOpenTool::PerfEventOpenTool(const std::vector<EventType>& events, const
     openEvents(events, raw_configs);
 }
 
-/**
- * @brief 构造函数，直接监测任意perf_event事件
- * @param perf_type 事件类型（如PERF_TYPE_HARDWARE、PERF_TYPE_HW_CACHE、PERF_TYPE_RAW等）
- *        perf_type决定了你要监控的事件类别，常见取值有：
- *        - PERF_TYPE_HARDWARE：通用硬件事件（如CPU周期、指令数等）
- *        - PERF_TYPE_SOFTWARE：软件事件（如上下文切换、页面错误等）
- *        - PERF_TYPE_HW_CACHE：硬件cache相关事件（如L1/L2/LLC等cache的访问/未命中等）
- *        - PERF_TYPE_RAW：原始事件，需要配合PMU文档指定config
- *        详见 /usr/include/linux/perf_event.h 中 enum perf_type_id
- * @param perf_config 事件配置（具体事件编号或cache三元组等，取决于perf_type）
- *        - 对于PERF_TYPE_HARDWARE，perf_config为PERF_COUNT_HW_*，如PERF_COUNT_HW_CPU_CYCLES等
- *        - 对于PERF_TYPE_HW_CACHE，perf_config为三元组编码（cache类型 | 操作类型<<8 | 结果类型<<16）
- *          例如：L1D读未命中 = PERF_COUNT_HW_CACHE_L1D | (PERF_COUNT_HW_CACHE_OP_READ << 8) | (PERF_COUNT_HW_CACHE_RESULT_MISS << 16)
- *        - 对于PERF_TYPE_RAW，perf_config为PMU原始事件编码
- *        详见 /usr/include/linux/perf_event.h 中相关enum定义
- */
-PerfEventOpenTool::PerfEventOpenTool(uint32_t perf_type, uint64_t perf_config) {
+PerfEventOpenTool::PerfEventOpenTool(const std::vector<uint32_t>& perf_types, const std::vector<uint64_t>& perf_configs) {
     events_.clear();
-    struct perf_event_attr pe;
-    memset(&pe, 0, sizeof(struct perf_event_attr));
-    pe.type = perf_type;      // 事件类型，决定监控哪类事件
-    pe.size = sizeof(struct perf_event_attr);
-    pe.config = perf_config;  // 事件配置，具体事件编号或cache三元组等
-    pe.disabled = 1;
-    pe.exclude_kernel = 1;
-    pe.exclude_hv = 1;
-    pe.read_format = 0;
-    int fd = perf_event_open(&pe, 0, -1, -1, 0);
-    if (fd == -1) throw std::runtime_error("perf_event_open failed");
-    uint64_t id = 0;
-    // ioctl是Linux系统调用，用于对设备文件（包括perf事件fd）进行各种控制操作。
-    // 这里的ioctl(fd, PERF_EVENT_IOC_ID, &id)的作用是：
-    //   - 向内核请求获取该perf事件的唯一ID（id），
-    //   - 这样在多事件分组读取时，可以通过ID区分每个事件的计数值。
-    //   - PERF_EVENT_IOC_ID是perf_event_open接口专用的命令，要求内核把该事件的唯一标识写入id指针指向的内存。
-    //   - 这样后续读取分组数据时，可以通过ID匹配到具体的事件。
-    ioctl(fd, PERF_EVENT_IOC_ID, &id);
-    events_.push_back({fd, EventType::RAW, perf_config, id, 0});
-    group_leader_fd_ = fd;
+    int group_fd = -1;
+    for (size_t i = 0; i < perf_types.size(); ++i) {
+        struct perf_event_attr pe;
+        memset(&pe, 0, sizeof(struct perf_event_attr));
+        pe.type = perf_types[i];
+        pe.size = sizeof(struct perf_event_attr);
+        pe.config = (i < perf_configs.size() ? perf_configs[i] : 0);
+        pe.disabled = 1;
+        pe.exclude_kernel = 1;
+        pe.exclude_hv = 1;
+        pe.read_format = (perf_types.size() > 1) ? (PERF_FORMAT_GROUP | PERF_FORMAT_ID) : 0;
+        int fd = perf_event_open(&pe, 0, -1, group_fd, 0);
+        if (fd == -1) throw std::runtime_error("perf_event_open failed");
+        uint64_t id = 0;
+        ioctl(fd, PERF_EVENT_IOC_ID, &id);
+        if (group_fd == -1) group_fd = fd;
+        events_.push_back({fd, EventType::RAW, (i < perf_configs.size() ? perf_configs[i] : 0), id, 0});
+    }
+    group_leader_fd_ = group_fd;
     started_ = false;
     stopped_ = false;
 }
+
+PerfEventOpenTool::PerfEventOpenTool(uint32_t perf_type, uint64_t perf_config) :
+    PerfEventOpenTool(std::vector<uint32_t>{perf_type}, std::vector<uint64_t>{perf_config}) {}
 
 void PerfEventOpenTool::openEvents(const std::vector<EventType>& events, const std::vector<uint64_t>& raw_configs) {
     events_.clear();

@@ -48,11 +48,18 @@ public:
     PerfEventOpenTool(const std::vector<EventType>& events, const std::vector<uint64_t>& raw_configs = {});
 
     /**
-     * @brief 构造函数，直接监测任意perf_event事件
-     * @param perf_type 事件类型（如PERF_TYPE_HW_CACHE, PERF_TYPE_HW_BRANCH等）
-     * @param perf_config 事件配置（如cache三元组、branch类型等）
+     * @brief 构造函数，直接监测任意perf_event事件（单事件）
+     * @param perf_type 事件类型（如PERF_TYPE_HARDWARE、PERF_TYPE_SOFTWARE、PERF_TYPE_HW_CACHE、PERF_TYPE_RAW等）
+     * @param perf_config 事件配置（如PERF_COUNT_HW_CPU_CYCLES、PERF_COUNT_SW_PAGE_FAULTS_MIN等）
      */
     PerfEventOpenTool(uint32_t perf_type, uint64_t perf_config);
+
+    /**
+     * @brief 构造函数，支持多个事件类型和配置（分组统计）
+     * @param perf_types 事件类型数组
+     * @param perf_configs 事件配置数组
+     */
+    PerfEventOpenTool(const std::vector<uint32_t>& perf_types, const std::vector<uint64_t>& perf_configs);
 
     /**
      * @brief 启动计数器（在关键代码前调用）
