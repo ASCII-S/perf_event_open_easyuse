@@ -1,5 +1,6 @@
-#ifndef PERF_EVENT_OPEN_TOOL_CLASS_H
-#define PERF_EVENT_OPEN_TOOL_CLASS_H
+#ifndef PERF_EVENT_OPEN_TOOL_H
+#define PERF_EVENT_OPEN_TOOL_H
+#ifndef NO_PERF_MONITOR
 
 #include <vector>
 #include <string>
@@ -109,4 +110,40 @@ private:
     static std::string eventTypeToString(EventType type, uint64_t raw_config = 0);
 };
 
-#endif // PERF_EVENT_OPEN_TOOL_CLASS_H 
+#else
+
+// 空实现（no-op）
+#include <vector>
+#include <string>
+#include <map>
+#include <stdint.h>
+
+class PerfEventOpenTool {
+public:
+    enum class EventType {
+        CPU_CYCLES,
+        INSTRUCTIONS,
+        CACHE_MISSES,
+        CACHE_REFERENCES,
+        BRANCH_MISSES,
+        BRANCH_INSTRUCTIONS,
+        BUS_CYCLES,
+        STALLED_CYCLES_FRONTEND,
+        STALLED_CYCLES_BACKEND,
+        RAW
+    };
+    PerfEventOpenTool(EventType event, uint64_t raw_config = 0) {}
+    PerfEventOpenTool(const std::vector<EventType>& events, const std::vector<uint64_t>& raw_configs = {}) {}
+    PerfEventOpenTool(uint32_t perf_type, uint64_t perf_config) {}
+    PerfEventOpenTool(const std::vector<uint32_t>& perf_types, const std::vector<uint64_t>& perf_configs) {}
+    void start() {}
+    void stop() {}
+    std::map<std::string, uint64_t> getResults() const { return {}; }
+    void printResults() const {}
+    void logResults(const std::string& log_path) const {}
+    ~PerfEventOpenTool() {}
+};
+
+#endif
+
+#endif // PERF_EVENT_OPEN_TOOL_H 
