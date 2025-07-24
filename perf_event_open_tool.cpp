@@ -159,6 +159,7 @@ void PerfEventOpenTool::stop() {
         }
     }
     stopped_ = true;
+    started_ = false;
 }
 
 std::map<std::string, uint64_t> PerfEventOpenTool::getResults() const {
