@@ -53,12 +53,12 @@ void multi_event_test(){
         PerfEventOpenTool::EventType::BRANCH_INSTRUCTIONS,
         PerfEventOpenTool::EventType::BUS_CYCLES,
     };
-    PerfEventOpenTool tool2(events);
-    tool2.start();
+    PerfEventOpenTool tool(events);
+    tool.start();
     // 需要监测的代码
     my_code();
-    tool2.stop();
-    
+    tool.stop();
+
     // 输出到文件
     std::string log_path = "perf.log";
     std::ofstream ofs(log_path, std::ios::trunc);
@@ -68,7 +68,7 @@ void multi_event_test(){
     tool.printResults();
 
     // 计算miss rate
-    std::map<std::string, uint64_t> results = tool2.getResults();
+    std::map<std::string, uint64_t> results = tool.getResults();
     std::cout << "Cache miss rate:" << 100.0*results["CACHE_MISSES"] / results["CACHE_REFERENCES"] << "%" << std::endl;
     std::cout << "Branch miss rate:" << 100.0*results["BRANCH_MISSES"] / results["BRANCH_INSTRUCTIONS"] << "%" << std::endl;
 }
